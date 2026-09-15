@@ -15,7 +15,7 @@
     const TOTAL_KEY = "cd_learning_outcome_total";
     const CURRENT_ROW_KEY = "cd_learning_outcome_current";
     const SOURCE_KEY = "cd_learning_outcome_source";
-    const REQUIRED_COLUMNS = ["name", "description"];
+    const REQUIRED_COLUMNS = ["name", "description", "department"];
     let progressActionPending = false;
     let autoCreateInProgress = false;
 
@@ -56,6 +56,39 @@
         element.dispatchEvent(
             new Event("blur", { bubbles: true })
         );
+    }
+
+    function setSearchInput(element, value) {
+
+        const setter =
+            Object.getOwnPropertyDescriptor(
+                HTMLInputElement.prototype,
+                "value"
+            ).set;
+
+        setter.call(element, value);
+
+        element.dispatchEvent(
+            new Event("input", { bubbles: true })
+        );
+    }
+
+    function normalizeText(value) {
+        return String(value ?? "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .toLowerCase();
+    }
+
+    function getVisibleDepartmentOptions() {
+        return [...document.querySelectorAll(
+            ".multiselect__option, [role=\"option\"]"
+        )]
+            .filter(option => {
+                const style = getComputedStyle(option);
+                return style.display !== "none" &&
+                    style.visibility !== "hidden";
+            });
     }
 
     function parseCSV(text) {
@@ -168,6 +201,102 @@
         await sleep(500);
     }
 
+    async function selectDepartment(departmentName) {
+
+        departmentName = String(departmentName ?? "").trim();
+
+        const field =
+            [...document.querySelectorAll(
+                ".field-wrapper"
+            )]
+            .find(el =>
+                el.textContent.includes("Departments")
+            );
+
+        if (!field) {
+            throw new Error(
+                "Missing field Departments"
+            );
+        }
+
+        const multiselect =
+            field.querySelector(".multiselect");
+
+        if (!multiselect) {
+            throw new Error(
+                "No multiselect for Departments"
+            );
+        }
+
+        multiselect.click();
+
+        let searchInput;
+
+        for (let attempt = 0; attempt < 10; attempt++) {
+            searchInput =
+                field.querySelector(".multiselect__input");
+
+            if (searchInput) {
+                break;
+            }
+
+            await sleep(100);
+        }
+
+        if (!searchInput) {
+            throw new Error(
+                "Department search input not found"
+            );
+        }
+
+        searchInput.focus();
+        searchInput.click();
+        setSearchInput(searchInput, departmentName);
+        searchInput.dispatchEvent(
+            new KeyboardEvent("keyup", {
+                bubbles: true,
+                key: departmentName.slice(-1)
+            })
+        );
+        searchInput.dispatchEvent(
+            new Event("change", { bubbles: true })
+        );
+
+        let options = [];
+
+        for (let attempt = 0; attempt < 20; attempt++) {
+            options = getVisibleDepartmentOptions();
+
+            if (options.some(option =>
+                normalizeText(option.textContent) ===
+                normalizeText(departmentName)
+            )) {
+                break;
+            }
+
+            await sleep(250);
+        }
+
+        const option = options.find(candidate =>
+            normalizeText(candidate.textContent) ===
+            normalizeText(departmentName)
+        );
+
+        if (!option) {
+            console.error(
+                "Available department options:",
+                options.map(candidate => candidate.textContent.trim())
+            );
+
+            throw new Error(
+                `Could not find department "${departmentName}"`
+            );
+        }
+
+        option.click();
+        await sleep(500);
+    }
+
     async function fillForm(row) {
 
         console.debug(row);
@@ -201,6 +330,10 @@
             description,
             row.description
         );
+
+        await sleep(100);
+        console.debug(`Set department ${row.department}`);
+        await selectDepartment(row.department);
 
         await sleep(100);
         console.debug(`Set start ${row.startTerm}`);

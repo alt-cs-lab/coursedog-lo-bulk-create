@@ -22,7 +22,7 @@ This project is licensed under the [MIT License](LICENSE).
 The first row must contain these headers:
 
 ```csv
-name,description,department,startTerm,attributeLevel,learningOutcomeLevel
+name,startTerm,description,attributeLevel,learningOutcomeLevel,department
 ```
 
 Required columns:

@@ -41,7 +41,7 @@ Optional columns:
 If any of your text contains commas, surround the value with quotes. For example:
 
 ```csv
-"CIS101 SLO 1",30,"This is a sample description with a comma, in it.","Undergraduate","Course"
+CIS101 SLO 1,Fall 2027,"This is a sample description with a comma, in it.",Course,Introduced,Computer Science
 ```
 
 ## Import Workflow

@@ -30,8 +30,8 @@ Required columns:
 - `name`: The name of the learning outcome. Should match the naming convention used in Coursedog.
 - `startTerm`: The term when the learning outcome starts.
 - `description`: A description of the learning outcome.
-- `attributeLevel`: The attribute level of the learning outcome.
-- `learningOutcomeLevel`: The learning outcome level.
+- `attributeLevel`: The attribute level of the learning outcome (Course or Program).
+- `learningOutcomeLevel`: The learning outcome level (See coursedog form for available options).
 
 
 

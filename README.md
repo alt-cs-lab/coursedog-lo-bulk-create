@@ -27,17 +27,22 @@ name,description,department,startTerm,attributeLevel,learningOutcomeLevel
 
 Required columns:
 
-- `name`
-- `description`
-- `department`
+- `name`: The name of the learning outcome. Should match the naming convention used in Coursedog.
+- `startTerm`: The term when the learning outcome starts.
+- `description`: A description of the learning outcome.
+- `attributeLevel`: The attribute level of the learning outcome.
+- `learningOutcomeLevel`: The learning outcome level.
+
+
 
 Optional columns:
+- `department`: The department associated with the learning outcome. If provided, it must match the department name in Coursedog exactly (case-sensitive). If not provided, the learning outcome will be created without a department.
 
-- `startTerm`
-- `attributeLevel`
-- `learningOutcomeLevel`
+If any of your text contains commas, surround the value with quotes. For example:
 
-Use the exact department name as it appears in Coursedog. The importer searches the `Departments` multiselect and selects the matching result. Surrounding quotes around a value are removed before it is entered.
+```csv
+"CIS101 SLO 1",30,"This is a sample description with a comma, in it.","Undergraduate","Course"
+```
 
 ## Import Workflow
 

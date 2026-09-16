@@ -13,6 +13,10 @@ The install link points to the actual `.user.js` filename. If the file opens as 
 
 Note: Once done with the script, you can toggle it off through tampermonkey or uninstall entirely to hide the import buttons (they can cover other elements on the page when doing other tasks in coursedog).
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
 ## CSV Format
 
 The first row must contain these headers:

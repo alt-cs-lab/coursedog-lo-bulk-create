@@ -18,6 +18,7 @@
     const REQUIRED_COLUMNS = ["name", "description", "department"];
     let progressActionPending = false;
     let autoCreateInProgress = false;
+    let rowAudioContext = null;
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -28,6 +29,77 @@
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;")
             .replaceAll("'", "&#39;");
+    }
+
+    function playRowCompleteSound() {
+        try {
+            const AudioContextClass =
+                window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                return;
+            }
+
+            if (!rowAudioContext) {
+                rowAudioContext = new AudioContextClass();
+            }
+
+            const audioContext = rowAudioContext;
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            audioContext.resume().then(() => {
+                oscillator.type = "sine";
+                oscillator.frequency.setValueAtTime(
+                    880,
+                    audioContext.currentTime
+                );
+                oscillator.frequency.setValueAtTime(
+                    1175,
+                    audioContext.currentTime + 0.08
+                );
+
+                gain.gain.setValueAtTime(
+                    0.0001,
+                    audioContext.currentTime
+                );
+                gain.gain.exponentialRampToValueAtTime(
+                    0.12,
+                    audioContext.currentTime + 0.01
+                );
+                gain.gain.exponentialRampToValueAtTime(
+                    0.0001,
+                    audioContext.currentTime + 0.18
+                );
+
+                oscillator.connect(gain);
+                gain.connect(audioContext.destination);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.18);
+            }).catch(err => {
+                console.debug("Could not resume row completion sound.", err);
+            });
+        } catch (err) {
+            console.debug("Could not play row completion sound.", err);
+        }
+    }
+
+    function unlockRowAudio() {
+        try {
+            const AudioContextClass =
+                window.AudioContext || window.webkitAudioContext;
+
+            if (!AudioContextClass) {
+                return;
+            }
+
+            if (!rowAudioContext) {
+                rowAudioContext = new AudioContextClass();
+            }
+
+            rowAudioContext.resume().catch(() => {});
+        } catch (err) {
+            console.debug("Could not unlock row completion sound.", err);
+        }
     }
 
     function setInput(element, value) {
@@ -78,6 +150,13 @@
             .replace(/\s+/g, " ")
             .trim()
             .toLowerCase();
+    }
+
+    function removeOuterQuotes(value) {
+        return String(value ?? "")
+            .trim()
+            .replace(/^("|“)(.*)("|”)$/s, "$2")
+            .trim();
     }
 
     function getVisibleDepartmentOptions() {
@@ -135,6 +214,8 @@
     labelText,
      optionText
     ) {
+
+        optionText = removeOuterQuotes(optionText);
 
         const field =
               [...document.querySelectorAll(
@@ -203,7 +284,7 @@
 
     async function selectDepartment(departmentName) {
 
-        departmentName = String(departmentName ?? "").trim();
+        departmentName = removeOuterQuotes(departmentName);
 
         const field =
             [...document.querySelectorAll(
@@ -297,7 +378,27 @@
         await sleep(500);
     }
 
+    function setContinueButtonDisabled(disabled) {
+        const continueButton =
+            document.getElementById("cd-continue-btn");
+
+        if (continueButton) {
+            continueButton.disabled = disabled;
+        }
+    }
+
     async function fillForm(row) {
+
+        setContinueButtonDisabled(true);
+
+        try {
+            await fillFormFields(row);
+        } finally {
+            setContinueButtonDisabled(false);
+        }
+    }
+
+    async function fillFormFields(row) {
 
         console.debug(row);
         const name =
@@ -321,14 +422,18 @@
                 "Description field not found"
             );
         }
-        console.debug(`Set name ${row.name}`);
-        setInput(name, row.name);
+        const nameValue = removeOuterQuotes(row.name);
+        const descriptionValue = removeOuterQuotes(row.description);
+        console.log(`Setting name to: ${nameValue}`);
+        console.log(`Setting description to: ${descriptionValue}`);
+
+        setInput(name, nameValue);
 
         await sleep(100);
-        console.debug(`Set desc ${row.description}`);
+        console.debug(`Set desc ${descriptionValue}`);
         setInput(
             description,
-            row.description
+            descriptionValue
         );
 
         await sleep(100);
@@ -870,6 +975,8 @@ if (!row) {
 
             localStorage.removeItem(CURRENT_ROW_KEY);
 
+            playRowCompleteSound();
+
             const total =
                   parseInt(
                       localStorage.getItem(
@@ -1329,6 +1436,16 @@ if (!row) {
 
     addImportButton();
     addShowProgressButton();
+    document.addEventListener(
+        "pointerdown",
+        unlockRowAudio,
+        { once: true, capture: true }
+    );
+    document.addEventListener(
+        "keydown",
+        unlockRowAudio,
+        { once: true, capture: true }
+    );
     autoCreateNewProposal();
     window.addEventListener(
         "hashchange",
